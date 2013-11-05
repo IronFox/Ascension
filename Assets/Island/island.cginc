@@ -88,7 +88,7 @@
 			clip(delta+0.1);
 			float3 object = mul(_World2Object,float4(IN.worldPos,1.0)).xyz;
 			float2 uv = 1.0 - ((object.xz/0.25) / 2048.0 + 0.5);
-			uv.y = 1.0 - uv.y;
+			//uv.y = 1.0 - uv.y;
 			float3 n = tex2D(_NormalMap,uv).xyz * 2.0 - 1.0;
 			o.Normal = n;
 			o.Albedo = float3(1.0,1.0,1.0);
