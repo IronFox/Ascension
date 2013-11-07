@@ -16,14 +16,23 @@
 			#pragma glsl
 			#pragma target 3.0
 
+			#include "sampleTerrainHeight.cginc"
+			
+			
+			sampler2D GrassColor, RockColor, SandColor, ForestColor,_WaterHeightMap;
+			
 			float VertexHeight(float h0, float h1, float h2)
 			{
 				return h0;
 			}
 			
-			sampler2D GrassColor, RockColor, SandColor, ForestColor;
+			float GetWaterHeight(float2 uv)
+			{
+				return SampleHeight(_WaterHeightMap, uv);
+			}
 			
-			void FinishFragment(float2 world, float delta, float3 normal, inout SurfaceOutput o)
+			
+			void FinishFragment(float2 world, float delta, float waterDepth,float3 normal, inout SurfaceOutput o)
 			{
 				float g = min(1.0,delta*100.0);
 				float r = 1.0;//fmod(s.x,0.5) * 2.0;
@@ -33,9 +42,9 @@
 				float4 forest = (tex2D(ForestColor,world) + tex2D(ForestColor,world/3.14159)) * 0.5;
 				
 				float transfer_to_lower = 1.0 - smoothstep(0.0,5.0,delta);
-				//float water = tex2D(water_map,gl_TexCoord[0].xy).x * (1.0 - transfer_to_lower)  / 5.0;
-				float water = 0.0;
-
+				float water = waterDepth * (1.0 - transfer_to_lower);
+				//float water = 0.0;
+				sand.a = sand.r;
 				float sand_a = smoothstep(-0.2,0.2,-0.2 + 1.4*(smoothstep(0.0,0.2,water) * smoothstep(0.3,0.6,normal.z)- sand.a));
 				float plant = (1.0 - smoothstep(0.0,0.2,water));
 				
@@ -52,12 +61,14 @@
 				
 				diffuse *= 0.25 + 0.75 * (1.0 - tree_coverage*tree_coverage);
 				
-				float water_depth = 0.0;
+				float water_depth = waterDepth;
 				
 				float3 waterColor = pow(float3(0.4,0.55,0.75),max(0.0,water_depth)* (1.0 - transfer_to_lower) * 0.5);
 				diffuse *= waterColor;
 
 				o.Albedo = diffuse * color;
+				
+				//o.Albedo = (float3)min(waterDepth*2.0,2.0);
 				//o.Albedo.rg = sin(world) * 0.5 + 0.5;
 			}
 			

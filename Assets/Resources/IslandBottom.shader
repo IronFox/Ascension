@@ -22,9 +22,14 @@
 				return h1;
 			}
 			
+			float GetWaterHeight(float2 uv)
+			{
+				return -1000.0;
+			}
+			
 			sampler2D RockColor;
 			
-			void FinishFragment(float2 world, float delta, float3 normal, inout SurfaceOutput o)
+			void FinishFragment(float2 world, float delta, float waterDepth,float3 normal,  inout SurfaceOutput o)
 			{
 				float4 rock = (tex2D(RockColor,world) + tex2D(RockColor,world/3.14159)) * 0.5;
 				o.Albedo = rock.rgb;

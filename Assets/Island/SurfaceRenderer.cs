@@ -557,16 +557,10 @@ class Cell
 			    w = float4(coords.x,coords.y-scale*0.5f,0,1);
 		    break;
 	    }
-        island.DbgShape = shape;
-        island.DbgX = x;
-        island.DbgY = y;
-	    //owner.last_extend.derelativate(m.x.x * 0.5f + 0.5f,m.x.y * 0.5f+0.5f,m.x.x,m.x.y);
 	    x.x *= owner.HalfWidth;
 	    x.y *= owner.HalfHeight;
 	    y.x *= owner.HalfWidth;
 	    y.y *= owner.HalfHeight;
-        island.DbgHalfWidth = owner.HalfWidth;
-        island.DbgHalfHeight = owner.HalfHeight;
 
         Matrix4x4   m = new Matrix4x4();
         m.SetColumn(0, x);
@@ -653,8 +647,6 @@ class Cell
 		    edge_length += Vector3.Distance(vertices[next],vertices[at]);
 		    at = next;
 	    }
-        island.DbgEdgeLength = edge_length;
-        island.DbgMatrix = m;
 	 
 	    boundingSphere.a = new Sphere(center,0.0f);
 
@@ -747,7 +739,6 @@ class Cell
 	    //TVec3<>	world_pos = {coords.x * map_extend, 0.f, coords.y*map_extend};
 	    //world_pos.y = resolveHeightAt(world_pos.x,world_pos.z);
 	    float distance = Mathf.Max(f.GetDistanceTo(boundingSphere.a.Center)-edge_len*0.5f,0.0f);
-        island.DbgDistance = distance;
 	    bool result = false;
 	    bool edge_is_open = is_open[0];
 	    Cell	n0 = neighbor[0];
@@ -1164,6 +1155,14 @@ class HeightMap
 
 };
 
+public struct DbgInfo
+{
+    public int Frame;
+    public int VisibleCells;
+
+}
+
+
 [ExecuteInEditMode]
 public class SurfaceRenderer : MonoBehaviour {
 
@@ -1188,19 +1187,13 @@ public class SurfaceRenderer : MonoBehaviour {
                     
     
     public bool     Initialized = false;
-    
-    public int DbgFrame = 0;
-    public int DbgVisibleCells = 0,
-                  DbgShape = -1;
-    public Vector3 DbgCameraPosition;
-    public Vector4 DbgX, DbgY;
-    public float DbgDistance = -1.0f,
-                DbgEdgeLength = -1,
-                DbgHalfWidth0 = -1,
-                DbgHalfHeight0 = -1,
-                DbgHalfWidth = -1,
-                DbgHalfHeight = -1;
-    public Matrix4x4 DbgMatrix;
+    private bool playMode = false;
+
+    public DbgInfo Dbg = new DbgInfo();
+
+    public string IslandName;
+    private string islandName;
+
 
     public float HalfWidth { get { return lastExtend.x.Extend / 2.0f; } }
     public float HalfHeight { get { return lastExtend.y.Extend / 2.0f; } }
@@ -1236,8 +1229,6 @@ public class SurfaceRenderer : MonoBehaviour {
         center.x = centerX;
         center.y = centerY;
 	    lastExtend.SetCenter(center.x,center.y,(float)(mapWidth)/4.0f/2.0f,(float)(mapHeight)/4.0f/2.0f);
-        DbgHalfWidth0 = HalfWidth;
-        DbgHalfHeight0 = HalfHeight;
     }
 
 
@@ -1266,17 +1257,18 @@ public class SurfaceRenderer : MonoBehaviour {
 
     Two<Cell>       root;
 
-    public string DbgCamera;
 
     private Camera viewCamera;
 
     void OnRenderObject()
     {
-        this.transform.position = new Vector3(0, Mathf.Sin(Time.time) * 0.5f, 0);
-
-        if (viewCamera == null && Camera.current.name == "SceneCamera")
+        if (!playMode)
         {
-            viewCamera = Camera.current;
+            this.transform.position = new Vector3(0, Mathf.Sin(Time.time) * 0.005f, 0);
+            if (viewCamera == null && Camera.current.name == "SceneCamera")
+            {
+                viewCamera = Camera.current;
+            }
         }
     }
 
@@ -1290,22 +1282,32 @@ public class SurfaceRenderer : MonoBehaviour {
         root.b.Create(this, 1, 2.0f, H.float2(0));
     }
 
-	void Start () {
-        //if (Initialized)
-          //  return;
+	void Start()
+    {
+        playMode = true;
+        Init(true);
+    }
+
+
+    private bool Init(bool nameChange)
+    {
+        if (IslandName.Length == 0)
+        {
+            Initialized = false;
+            return false;
+        }
         Initialized = true;
         Cell.StaticInit();
 
-        if (h0 == null)
-            h0 = new HeightMap("islandTop.png");
-        if (h1 == null)
-            h1 = new HeightMap("islandBottom.png");
-        topNormalMap = HeightMap.Load("islandTopNormals.png");
-        bottomNormalMap = HeightMap.Load("islandBottomNormals.png");
-        // h1 = new HeightMap("islandBottom.png");
-        //h2 = new HeightMap("islandWater.png");
-        UpdateExtend(0, 0, h0.Texture.width, h0.Texture.height);
-
+        if (h0 == null || nameChange)
+        {
+            h0 = new HeightMap("Islands/" + IslandName + "/top.png");
+            h1 = new HeightMap("Islands/" + IslandName + "/bottom.png");
+            h2 = new HeightMap("Islands/" + IslandName + "/water.png");
+            topNormalMap = HeightMap.Load("Islands/" + IslandName + "/topNormals.png");
+            bottomNormalMap = HeightMap.Load("Islands/" + IslandName + "/bottomNormals.png");
+            UpdateExtend(0, 0, h0.Texture.width, h0.Texture.height);
+        }
         topShader = (Shader)Resources.Load("IslandTop", typeof(Shader));
         bottomShader = (Shader)Resources.Load("IslandBottom", typeof(Shader));
 
@@ -1343,19 +1345,26 @@ public class SurfaceRenderer : MonoBehaviour {
 
 
         ResetCells();
-        DbgFrame = 0;
+        Dbg.Frame = 0;
+        return true;
     }
 
-    void OnGUI()
-    {
-        //DbgFrame++;
-    }
 	// Update is called once per frame
 	void Update () {
+        if (!playMode && islandName != IslandName)
+        {
+            string oldName = islandName;
+            islandName = IslandName;
+            if (!Init(true))
+            {
+                islandName = oldName;
+                return;
+            }
+        }
         if (!Initialized || root.a == null)
-            Start();
+            if (!Init(false))
+                return;
 
-        //DbgCamera = Camera.current.name;
 
         if (rock != Rock)
         {
@@ -1417,10 +1426,7 @@ public class SurfaceRenderer : MonoBehaviour {
             }
         }
 
-        //if (DbgFrame > 1000)
-        //  return;
-        DbgVisibleCells = visibleLeaves.Count;
-        //DbgCameraPosition = f.UnityCenter;
+        Dbg.VisibleCells = visibleLeaves.Count;
 
         root.a.RegisterVisibleLeaves(visibleLeaves);
         root.b.RegisterVisibleLeaves(visibleLeaves);
@@ -1447,7 +1453,7 @@ public class SurfaceRenderer : MonoBehaviour {
                // if (leaf.WaterIsVisible)
                     leaf.Render(waterMaterial,2);
         }
-        DbgFrame++;
+        Dbg.Frame++;
 	
 	}
 }
