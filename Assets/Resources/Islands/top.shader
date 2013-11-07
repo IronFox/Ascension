@@ -1,4 +1,4 @@
-﻿Shader "Custom/IslandTop" {
+﻿Shader "Island/Top" {
 	Properties {
 	}
 	SubShader {
@@ -19,7 +19,7 @@
 			#include "sampleTerrainHeight.cginc"
 			
 			
-			sampler2D GrassColor, RockColor, SandColor, ForestColor,_WaterHeightMap;
+			sampler2D GrassColor, RockColor, SandColor, ForestColor,_WaterHeightMap, _LowerHeightMap;
 			
 			float VertexHeight(float h0, float h1, float h2)
 			{
@@ -29,6 +29,10 @@
 			float GetWaterHeight(float2 uv)
 			{
 				return SampleHeight(_WaterHeightMap, uv);
+			}
+			float GetBottomHeight(float2 uv)
+			{
+				return SampleHeight(_LowerHeightMap, uv);
 			}
 			
 			
@@ -72,7 +76,7 @@
 				//o.Albedo.rg = sin(world) * 0.5 + 0.5;
 			}
 			
-			#include "islandTerrain.cginc"
+			#include "terrain.cginc"
 			ENDCG
 	 
 	}

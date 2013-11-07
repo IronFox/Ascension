@@ -1,4 +1,4 @@
-﻿Shader "Custom/IslandTop" {
+﻿Shader "Island/Bottom" {
 	Properties {
 	}
 	SubShader {
@@ -17,17 +17,23 @@
 			#pragma glsl
 			#pragma target 3.0
 
+			#include "sampleTerrainHeight.cginc"
+			
+			sampler2D RockColor, _LowerHeightMap;
+
 			float VertexHeight(float h0, float h1, float h2)
 			{
 				return h1;
 			}
-			
 			float GetWaterHeight(float2 uv)
 			{
 				return -1000.0;
 			}
+			float GetBottomHeight(float2 uv)
+			{
+				return SampleHeight(_LowerHeightMap, uv);
+			}
 			
-			sampler2D RockColor;
 			
 			void FinishFragment(float2 world, float delta, float waterDepth,float3 normal,  inout SurfaceOutput o)
 			{
@@ -35,7 +41,7 @@
 				o.Albedo = rock.rgb;
 			}
 			
-			#include "islandTerrain.cginc"
+			#include "terrain.cginc"
 
 
 			ENDCG

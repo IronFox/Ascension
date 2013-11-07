@@ -1091,10 +1091,10 @@ class Cell
         Graphics.DrawMeshNow(mesh,unityMatrix[face]);
         //Graphics.DrawMesh(mesh, unityMatrix, material,0);
     }
-    public void Render(Material material, int face)
+    public void Render(Material material, int face, int layer)
     {
         //Graphics.DrawMeshNow(mesh, unityMatrix);
-        Graphics.DrawMesh(mesh, unityMatrix[face], material,0);
+        Graphics.DrawMesh(mesh, unityMatrix[face], material,layer);
     }	//void				putTrees(const Engine::Frustum<>&frustum, const TVector2<>&x);
 	//void				rasterNewTrees();
 };
@@ -1182,8 +1182,11 @@ public class SurfaceRenderer : MonoBehaviour {
     private Texture2D   grass,
                         forest,
                         rock,
-                        sand;
-    public Texture2D Grass, Rock, Sand, Forest;
+                        sand,
+                        waveNormalMap;
+    public Texture2D Grass, Rock, Sand, Forest, WaveNormalMap;
+    private Cubemap skyMap;
+    public Cubemap SkyMap;
                     
     
     public bool     Initialized = false;
@@ -1231,14 +1234,6 @@ public class SurfaceRenderer : MonoBehaviour {
 	    lastExtend.SetCenter(center.x,center.y,(float)(mapWidth)/4.0f/2.0f,(float)(mapHeight)/4.0f/2.0f);
     }
 
-
-    void UpdateMaterial(Material m, Frustum f)
-    {
-        if (m == null)
-            return;
-        m.SetVector("cameraPosition", f.UnityCenter);
-        m.SetVector("Region", new Vector4(lastExtend.x.Min, lastExtend.y.Min, lastExtend.x.Max, lastExtend.y.Max));
-    }
     void UpdateMaterial(Material m, Texture2D normalMap)
     {
         if (m == null)
@@ -1284,13 +1279,14 @@ public class SurfaceRenderer : MonoBehaviour {
 
 	void Start()
     {
-        playMode = true;
         Init(true);
+        playMode = true;
     }
 
 
     private bool Init(bool nameChange)
     {
+        playMode = false;
         if (IslandName.Length == 0)
         {
             Initialized = false;
@@ -1308,15 +1304,17 @@ public class SurfaceRenderer : MonoBehaviour {
             bottomNormalMap = HeightMap.Load("Islands/" + IslandName + "/bottomNormals.png");
             UpdateExtend(0, 0, h0.Texture.width, h0.Texture.height);
         }
-        topShader = (Shader)Resources.Load("IslandTop", typeof(Shader));
-        bottomShader = (Shader)Resources.Load("IslandBottom", typeof(Shader));
+        topShader = (Shader)Resources.Load("Islands/top", typeof(Shader));
+        bottomShader = (Shader)Resources.Load("Islands/bottom", typeof(Shader));
+        waterShader = (Shader)Resources.Load("Islands/water", typeof(Shader));
 
         topMaterial = new Material(topShader);
         bottomMaterial = new Material(bottomShader);
-        //waterMaterial = new Material(waterShader);
+        waterMaterial = new Material(waterShader);
 
         UpdateMaterial(topMaterial, topNormalMap);
         UpdateMaterial(bottomMaterial, bottomNormalMap);
+        UpdateMaterial(waterMaterial, null);
 
         {
             rock = Rock;
@@ -1341,7 +1339,16 @@ public class SurfaceRenderer : MonoBehaviour {
             if (Forest != null)
                 topMaterial.SetTexture("ForestColor", Forest);
         }
-
+        {
+            waveNormalMap = WaveNormalMap;
+            if (WaveNormalMap != null)
+                waterMaterial.SetTexture("_NormalMap", WaveNormalMap);
+        }
+        {
+            skyMap = SkyMap;
+            if (SkyMap != null)
+                waterMaterial.SetTexture("SkyMap", SkyMap);
+        }
 
 
         ResetCells();
@@ -1386,6 +1393,16 @@ public class SurfaceRenderer : MonoBehaviour {
         {
             forest = Forest;
             topMaterial.SetTexture("ForestColor", Forest);
+        }
+        if (waveNormalMap != WaveNormalMap)
+        {
+            waveNormalMap = WaveNormalMap;
+            waterMaterial.SetTexture("_NormalMap", WaveNormalMap);
+        }
+        if (skyMap != SkyMap)
+        {
+            skyMap = SkyMap;
+            waterMaterial.SetTexture("SkyMap", SkyMap);
         }
 
         root.a.ResetPerFrameData();
@@ -1437,21 +1454,21 @@ public class SurfaceRenderer : MonoBehaviour {
             //TopMaterial.SetPass(0);
             foreach (var leaf in visibleLeaves)
               //  if (leaf.TopIsVisible)
-                    leaf.Render(topMaterial,0);
+                    leaf.Render(topMaterial,0,0);
         }
         if (bottomMaterial != null)
         {
             //BottomMaterial.SetPass(0);
             foreach (var leaf in visibleLeaves)
                // if (leaf.BottomIsVisible)
-                    leaf.Render(bottomMaterial,1);
+                leaf.Render(bottomMaterial, 1, 0);
         }
         if (waterMaterial != null)
         {
             //WaterMaterial.SetPass(0);
             foreach (var leaf in visibleLeaves)
                // if (leaf.WaterIsVisible)
-                    leaf.Render(waterMaterial,2);
+                leaf.Render(waterMaterial, 2, 1);
         }
         Dbg.Frame++;
 	

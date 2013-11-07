@@ -2,13 +2,14 @@
 #define islandTerrainCGINC
 
 			
-	sampler2D _UpperHeightMap, _LowerHeightMap, _NormalMap;
+	sampler2D _UpperHeightMap, _NormalMap;
 	float4	Region;
 	
 	
 	struct Input {
 		float2 world;
 		float4 coords;
+		float zScale;
 	};
 	
 	#include "sampleTerrainHeight.cginc"
@@ -23,7 +24,7 @@
 		float4 world = mul(_Object2World,v.vertex);
 		float2 uv = (world.xz - Region.xy) / (Region.zw - Region.xy);
 		float 	h0 = SampleHeight(_UpperHeightMap,uv),
-				h1 = SampleHeight(_LowerHeightMap, uv),
+				h1 = GetBottomHeight(uv),
 				h2 = GetWaterHeight(uv);
 		//cos(world.x*0.25) * cos(world.z*0.25) * 2.0;
 		// v.normal = mul(_World2Object,float4(0.0,1.0,0.0,0.0)).xyz;
@@ -32,8 +33,12 @@
 		// v.tangent = float4(mul(_World2Object,float4(1.0,0.0,0.0,0.0)).xyz,1.0);
 		float3 t = mul(_World2Object,float4(1.0,0.0,0.0,0.0)).xyz;
 		float tl = length(t);
-		v.tangent = float4(t / tl,1.0);
+		v.tangent = float4(t / tl/tl,1.0);
 
+				float3 binormal = //mul(_Object2World,float4(cross(v.tangent.xyz,v.normal),0.0)).xyz;
+								// cross(mul(_Object2World,float4(v.tangent.xyz,0.0)).xyz,mul(_Object2World,float4(v.normal,0.0)));
+								mul(_Object2World,float4(cross(t,v.normal),0.0)).xyz;
+				float binormalLen = length(binormal);
 		
 		float vertexHeight = VertexHeight(h0,h1,h2);
 		float w = (h2 - vertexHeight) / 5.0;
@@ -53,7 +58,9 @@
 		UNITY_INITIALIZE_OUTPUT(Input,o);
 		o.coords = float4(uv,thickness,water_depth);
 		//o.thickness = thickness;
-
+		o.zScale = 1.0 / binormalLen;
+		//length(float3(_Object2World[0].y,_Object2World[1].y,_Object2World[2].y));
+		//1.0 / binormalLen;
 		o.world = world.xz;
 	}
 
@@ -74,6 +81,7 @@
 		//c.rgb;
 		
 		o.Normal = n;
+		o.Normal.y *= IN.zScale;
 		//float3(1.0,0.0,0.0);
 		o.Alpha = 1.0;
 		
