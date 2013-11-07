@@ -1107,11 +1107,17 @@ class HeightMap
     private Texture2D tex;
     public Texture2D Texture { get { return tex; } }
 
+    public bool Bad { get { return tex == null; } }
+
 
     public static Texture2D Load(string source)
     {
-        byte[] bytes = ((TextAsset)Resources.Load(source, typeof(TextAsset))).bytes;
-
+        object obj = Resources.Load(source, typeof(TextAsset));
+        if (obj == null)
+            return null;
+        byte[] bytes = ((TextAsset)obj).bytes;
+        if (bytes == null)
+            return null;
         Texture2D tex = new Texture2D(1, 1, TextureFormat.RGB24, false, true);
         tex.LoadImage(bytes);
         return tex;
@@ -1122,9 +1128,14 @@ class HeightMap
         return ((float)c.r) / 256.0f + (float)c.g + (float)c.b * 256.0f - 1000.0f;
     }
 
+
+
+
     public HeightMap(string source)
     {
         tex = Load(source);
+        if (tex == null)
+            return;
         tex.filterMode = FilterMode.Point;
         Color32[] pixels = tex.GetPixels32();
 
@@ -1173,6 +1184,7 @@ public class SurfaceRenderer : MonoBehaviour {
                         bottomNormalMap,
                         waterCoverageMap;
 
+    private Mesh hull;
 
     public Rect    lastExtend = new Rect();
     private Vector2 center;
@@ -1287,9 +1299,42 @@ public class SurfaceRenderer : MonoBehaviour {
         playMode = true;
     }
 
+    public string DbgInit = "";
+
+
+    private void RefreshHull()
+    {
+        List<GameObject> toDelete = new List<GameObject>();
+        foreach (Transform child in transform)
+        {
+            if (child.gameObject != null)
+                toDelete.Add(child.gameObject);
+        }
+        foreach (var d in toDelete)
+        {
+            DbgInit += ";Destroying " + d.name;
+            DestroyImmediate(d);
+        }
+        //for (int at = 0; ; at++)
+        {
+            int at = 0;
+            string path = "Islands/" + IslandName + "/hull";
+            GameObject obj = (GameObject)Resources.Load(path, typeof(GameObject));
+            foreach (Transform child in obj.transform)
+                foreach (Transform hullChild in child)
+                {
+                    DbgInit += ";" + hullChild.name;
+                    GameObject newChild = new GameObject("Physical Hull " + at++);
+                    newChild.transform.parent = transform;
+                    MeshCollider collider = (MeshCollider)newChild.AddComponent(typeof(MeshCollider));
+                    collider.sharedMesh = hullChild.gameObject.GetComponent<MeshFilter>().sharedMesh;
+                }
+        }
+    }
 
     private bool Init(bool nameChange)
     {
+        DbgInit = "";
         playMode = false;
         if (IslandName.Length == 0)
         {
@@ -1302,13 +1347,25 @@ public class SurfaceRenderer : MonoBehaviour {
         if (h0 == null || nameChange)
         {
             h0 = new HeightMap("Islands/" + IslandName + "/top.png");
+            if (h0.Bad)
+            {
+                h0 = null;
+                Initialized = false;
+                return false;
+            }
             h1 = new HeightMap("Islands/" + IslandName + "/bottom.png");
             h2 = new HeightMap("Islands/" + IslandName + "/water.png");
             topNormalMap = HeightMap.Load("Islands/" + IslandName + "/topNormals.png");
             bottomNormalMap = HeightMap.Load("Islands/" + IslandName + "/bottomNormals.png");
             waterCoverageMap = HeightMap.Load("Islands/" + IslandName + "/waterCoverage.png");
             UpdateExtend(0, 0, h0.Texture.width, h0.Texture.height);
+
+            RefreshHull();
+            islandName = IslandName;
         }
+
+
+        
         topShader = (Shader)Resources.Load("Islands/top", typeof(Shader));
         bottomShader = (Shader)Resources.Load("Islands/bottom", typeof(Shader));
         waterShader = (Shader)Resources.Load("Islands/water", typeof(Shader));
@@ -1375,13 +1432,8 @@ public class SurfaceRenderer : MonoBehaviour {
 	void Update () {
         if (!playMode && islandName != IslandName)
         {
-            string oldName = islandName;
-            islandName = IslandName;
             if (!Init(true))
-            {
-                islandName = oldName;
                 return;
-            }
         }
         if (!Initialized || root.a == null)
             if (!Init(false))

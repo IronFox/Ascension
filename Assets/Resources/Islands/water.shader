@@ -94,7 +94,7 @@
 				
 				float h = tex2D(WaterCoverageMap,IN.world2.xy).x;
 				float height = IN.world.w;
-				float time = _Time.y;
+				float time = _Time.y/2.0;
 				float3 world = IN.world.xyz;
 				if (h < 0.2 || height < -100.0)
 					clip(-1.0);
