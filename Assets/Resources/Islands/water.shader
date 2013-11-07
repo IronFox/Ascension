@@ -17,7 +17,7 @@
 
 			//addshadow fullforwardshadows 
 
-			sampler2D _UpperHeightMap, _LowerHeightMap, _WaterHeightMap, _NormalMap;
+			sampler2D _UpperHeightMap, _WaterHeightMap, _NormalMap, WaterCoverageMap;
 			samplerCUBE SkyMap;
 			float4 Region;
 			
@@ -38,12 +38,11 @@
 			
 			struct Input
 			{
+				float4 world2;
 				float4 world;
 				float3 tx;
 				float3 ty;
 				float3 tz;
-				float2 uv;
-				float zScale;
 			};
 
 
@@ -73,7 +72,7 @@
 				world.y = h2;
 				v.vertex = mul(_World2Object,world);
 
-				o = (Input)0.0;
+				//o = (Input)0.0;
 				
 				UNITY_INITIALIZE_OUTPUT(Input,o);
 				o.tz = sampleNormal(uv,h2);
@@ -82,16 +81,18 @@
 				//if (h1 > h0)
 					//h0 = -1000.0;
 				o.world = float4(world.xzy,h2 - h0);
-				o.uv = uv;
-				o.zScale = 1.0 / binormalLen;
+				o.world2 = float4(uv.x,uv.y,1.0 / binormalLen,0.0);
+
 			}
 
 
 
 			void surf (Input IN, inout SurfaceOutput o) {
-				clip(IN.world.w);
+				//clip(IN.world.w);
 
-				float h = IN.world.w *5.0;
+				//float h = IN.world.w *5.0;
+				
+				float h = tex2D(WaterCoverageMap,IN.world2.xy).x;
 				float height = IN.world.w;
 				float time = _Time.y;
 				float3 world = IN.world.xyz;
@@ -127,7 +128,7 @@
 						
 				result.xyz /= result.w;
 					
-				result.xy *= 10.0;
+				result.xy *= 3.0;
 				
 				//result = float4(0.0,0.0,1.0,1.0);
 				float3 normal = normalize(IN.tx * result.x + IN.ty * result.y + IN.tz * result.z);
@@ -163,7 +164,7 @@
 				o.Alpha *= smoothstep(-100.0,-50.0,height);
 				//o.Alpha = 1.0;
 				o.Normal = normal;
-				o.Normal.y *= IN.zScale;
+				o.Normal.y *= IN.world2.z;
 				
 	
 			}

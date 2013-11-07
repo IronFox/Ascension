@@ -85,7 +85,7 @@
 		//float3(1.0,0.0,0.0);
 		o.Alpha = 1.0;
 		
-		FinishFragment(IN.world,IN.coords.z,IN.coords.w,n, o);
+		FinishFragment(IN.world,IN.coords.xy,IN.coords.z,IN.coords.w,n, o);
 	}
 	
 	

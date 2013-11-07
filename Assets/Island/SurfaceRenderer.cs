@@ -748,7 +748,8 @@ class Cell
         float factor = 8.0f;
         if (!TopIsVisible)
             factor *= 4.0f;
-	    bool want_to_subdivide = (this.depth<2 ||  distance*factor < edge_len) && edge_len > 16.0f;
+        bool want_to_subdivide = (this.depth < 2 || distance * factor < edge_len) && depth < 10;
+            //&& edge_len > 32.0f;
 	    bool force_subdivide = opposing_subdivided || force_subdivision;
 	    if (want_to_subdivide || force_subdivide)
 	    {
@@ -1124,6 +1125,7 @@ class HeightMap
     public HeightMap(string source)
     {
         tex = Load(source);
+        tex.filterMode = FilterMode.Point;
         Color32[] pixels = tex.GetPixels32();
 
         field = new float[tex.width,tex.height];
@@ -1167,8 +1169,9 @@ public struct DbgInfo
 public class SurfaceRenderer : MonoBehaviour {
 
     private HeightMap h0,h1,h2;
-    private Texture2D   topNormalMap,
-                        bottomNormalMap;
+    private Texture2D topNormalMap,
+                        bottomNormalMap,
+                        waterCoverageMap;
 
 
     public Rect    lastExtend = new Rect();
@@ -1183,8 +1186,9 @@ public class SurfaceRenderer : MonoBehaviour {
                         forest,
                         rock,
                         sand,
+                        moss,
                         waveNormalMap;
-    public Texture2D Grass, Rock, Sand, Forest, WaveNormalMap;
+    public Texture2D Grass, Rock, Sand, Moss, Forest, WaveNormalMap;
     private Cubemap skyMap;
     public Cubemap SkyMap;
                     
@@ -1302,15 +1306,21 @@ public class SurfaceRenderer : MonoBehaviour {
             h2 = new HeightMap("Islands/" + IslandName + "/water.png");
             topNormalMap = HeightMap.Load("Islands/" + IslandName + "/topNormals.png");
             bottomNormalMap = HeightMap.Load("Islands/" + IslandName + "/bottomNormals.png");
+            waterCoverageMap = HeightMap.Load("Islands/" + IslandName + "/waterCoverage.png");
             UpdateExtend(0, 0, h0.Texture.width, h0.Texture.height);
         }
         topShader = (Shader)Resources.Load("Islands/top", typeof(Shader));
         bottomShader = (Shader)Resources.Load("Islands/bottom", typeof(Shader));
         waterShader = (Shader)Resources.Load("Islands/water", typeof(Shader));
+        
+
 
         topMaterial = new Material(topShader);
         bottomMaterial = new Material(bottomShader);
         waterMaterial = new Material(waterShader);
+
+        waterMaterial.SetTexture("WaterCoverageMap", waterCoverageMap);
+        topMaterial.SetTexture("WaterCoverageMap", waterCoverageMap);
 
         UpdateMaterial(topMaterial, topNormalMap);
         UpdateMaterial(bottomMaterial, bottomNormalMap);
@@ -1333,6 +1343,11 @@ public class SurfaceRenderer : MonoBehaviour {
             sand = Sand;
             if (Sand != null)
                 topMaterial.SetTexture("SandColor", Sand);
+        }
+        {
+            moss = Moss;
+            if (Moss != null)
+                topMaterial.SetTexture("MossColor", Moss);
         }
         {
             forest = Forest;
@@ -1372,37 +1387,44 @@ public class SurfaceRenderer : MonoBehaviour {
             if (!Init(false))
                 return;
 
-
-        if (rock != Rock)
+        if (!playMode)
         {
-            rock = Rock;
-            topMaterial.SetTexture("RockColor", Rock);
-            bottomMaterial.SetTexture("RockColor", Rock);
-        }
-        if (grass != Grass)
-        {
-            grass = Grass;
-            topMaterial.SetTexture("GrassColor", Grass);
-        }
-        if (sand != Sand)
-        {
-            sand = Sand;
-            topMaterial.SetTexture("SandColor", Sand);
-        }
-        if (forest != Forest)
-        {
-            forest = Forest;
-            topMaterial.SetTexture("ForestColor", Forest);
-        }
-        if (waveNormalMap != WaveNormalMap)
-        {
-            waveNormalMap = WaveNormalMap;
-            waterMaterial.SetTexture("_NormalMap", WaveNormalMap);
-        }
-        if (skyMap != SkyMap)
-        {
-            skyMap = SkyMap;
-            waterMaterial.SetTexture("SkyMap", SkyMap);
+            if (rock != Rock)
+            {
+                rock = Rock;
+                topMaterial.SetTexture("RockColor", Rock);
+                bottomMaterial.SetTexture("RockColor", Rock);
+            }
+            if (grass != Grass)
+            {
+                grass = Grass;
+                topMaterial.SetTexture("GrassColor", Grass);
+            }
+            if (sand != Sand)
+            {
+                sand = Sand;
+                topMaterial.SetTexture("SandColor", Sand);
+            }
+            if (moss != Moss)
+            {
+                moss = Moss;
+                topMaterial.SetTexture("MossColor", Moss);
+            }
+            if (forest != Forest)
+            {
+                forest = Forest;
+                topMaterial.SetTexture("ForestColor", Forest);
+            }
+            if (waveNormalMap != WaveNormalMap)
+            {
+                waveNormalMap = WaveNormalMap;
+                waterMaterial.SetTexture("_NormalMap", WaveNormalMap);
+            }
+            if (skyMap != SkyMap)
+            {
+                skyMap = SkyMap;
+                waterMaterial.SetTexture("SkyMap", SkyMap);
+            }
         }
 
         root.a.ResetPerFrameData();

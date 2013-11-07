@@ -35,7 +35,7 @@
 			}
 			
 			
-			void FinishFragment(float2 world, float delta, float waterDepth,float3 normal,  inout SurfaceOutput o)
+			void FinishFragment(float2 world, float2 uv, float delta, float waterDepth,float3 normal,  inout SurfaceOutput o)
 			{
 				float4 rock = (tex2D(RockColor,world) + tex2D(RockColor,world/3.14159)) * 0.5;
 				o.Albedo = rock.rgb;

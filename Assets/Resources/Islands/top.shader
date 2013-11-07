@@ -19,7 +19,7 @@
 			#include "sampleTerrainHeight.cginc"
 			
 			
-			sampler2D GrassColor, RockColor, SandColor, ForestColor,_WaterHeightMap, _LowerHeightMap;
+			sampler2D GrassColor, RockColor, SandColor, MossColor, ForestColor,_WaterHeightMap, _LowerHeightMap,WaterCoverageMap;
 			
 			float VertexHeight(float h0, float h1, float h2)
 			{
@@ -36,7 +36,7 @@
 			}
 			
 			
-			void FinishFragment(float2 world, float delta, float waterDepth,float3 normal, inout SurfaceOutput o)
+			void FinishFragment(float2 world, float2 uv, float delta, float waterDepth,float3 normal, inout SurfaceOutput o)
 			{
 				float g = min(1.0,delta*100.0);
 				float r = 1.0;//fmod(s.x,0.5) * 2.0;
@@ -44,20 +44,25 @@
 				float4 sand = (tex2D(SandColor,world) + tex2D(SandColor,world/3.14159)) * 0.5;
 				float4 grass = (tex2D(GrassColor,world) + tex2D(GrassColor,world/3.14159)) * 0.5;
 				float4 forest = (tex2D(ForestColor,world) + tex2D(ForestColor,world/3.14159)) * 0.5;
+				float4 moss = (tex2D(MossColor,world) + tex2D(MossColor,world/3.14159) + tex2D(MossColor,world/3.14159/3.14159)) * 0.33333333;
 				
 				float transfer_to_lower = 1.0 - smoothstep(0.0,5.0,delta);
-				float water = waterDepth * (1.0 - transfer_to_lower);
+				//float water = waterDepth * (1.0 - transfer_to_lower);
+				float water = tex2D(WaterCoverageMap,uv).x * (1.0 - transfer_to_lower)  / 5.0;
 				//float water = 0.0;
-				sand.a = sand.r;
+				//sand.a = sand.r;
 				float sand_a = smoothstep(-0.2,0.2,-0.2 + 1.4*(smoothstep(0.0,0.2,water) * smoothstep(0.3,0.6,normal.z)- sand.a));
 				float plant = (1.0 - smoothstep(0.0,0.2,water));
 				
 				float tree_coverage = 0.0;//tex2D(tree_cover_map,gl_TexCoord[0].xy).x;
+				float moss_a =  smoothstep(-0.2,0.2,-0.2 + 1.4*(smoothstep(0.1,0.4,abs(normal.z)) * plant *0.9- moss.a));
+				grass.a = 1.0 - grass.a;
 				float grass_a =  smoothstep(-0.2,0.2,-0.2 + 1.4*(smoothstep(0.2,0.8,normal.z) * plant - grass.a));
 				float forest_a =  smoothstep(-0.5,0.5,-0.2 + 1.4*(tree_coverage - forest.a));
 				
 				float3 color = rock.rgb;
 				color = lerp(color,sand.rgb,sand_a);
+				color = lerp(color,moss.rgb,moss_a);
 				color = lerp(color,grass.rgb,grass_a);
 				color = lerp(color,forest.rgb,forest_a);
 				
