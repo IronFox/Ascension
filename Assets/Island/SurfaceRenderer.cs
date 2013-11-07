@@ -418,7 +418,7 @@ class Frustum
 
     public bool IsVisible(Sphere sphere)
     {
-        return true;
+       // return true;
         for (int i = 0; i < planes.Length; i++)
             if (planes[i].GetDistanceToPoint(sphere.UnityCenter) < -sphere.Radius*1.1f)
                 return false;
@@ -429,8 +429,10 @@ class Frustum
 
 class Cell
 {
+    GameObject testSphere;
+
     public const int    PhysicalResolution = 8,
-                        VisualResolution = 32;
+                        VisualResolution = 64;
     public Three<bool>  is_open;
     public bool		    force_subdivision,
 						TopIsVisible,
@@ -698,10 +700,18 @@ class Cell
 
             Matrix4x4 um;
             H.Convert(m, out um);
+
             unityMatrix[i] = um;
         }
 
 
+
+        //if (depth < 4)
+        //{
+        //    testSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        //    testSphere.transform.position = boundingSphere.a.UnityCenter;
+        //    testSphere.hideFlags = HideFlags.HideAndDontSave;
+        //}
 	    //lower_bounding_sphere.center.z
 	    //Vec::center(v0,v1,v2,bounding_sphere.center);
 	    //bounding_sphere.radius = vsqrt(vmax(vmax(Vec::quadraticDistance(v0,bounding_sphere.center),Vec::quadraticDistance(v1,bounding_sphere.center)),Vec::quadraticDistance(v2,bounding_sphere.center)));
@@ -720,14 +730,14 @@ class Cell
 	    Create(owner,shape,scale,coords,world_pos);
     }
 
-	public bool				Process(Frustum f)
+	public bool				Process(Frustum f, bool topIsVisible, bool bottomIsVisible, bool waterIsVisible)
     {
-    	TopIsVisible |=	f.IsVisible(boundingSphere.a);
-        BottomIsVisible |= f.IsVisible(boundingSphere.b);
-        WaterIsVisible |= f.IsVisible(boundingSphere.c);
+        TopIsVisible |= topIsVisible && f.IsVisible(boundingSphere.a);
+        BottomIsVisible |= bottomIsVisible && f.IsVisible(boundingSphere.b);
+        WaterIsVisible |= waterIsVisible && f.IsVisible(boundingSphere.c);
 	    processed = true;
-	    if (!force_subdivision && !TopIsVisible)
-		    return false;
+	    //if (!force_subdivision /*&& !TopIsVisible*/)
+		  //  return false;
 	    //Cell&cell0 = cells[sector_index];
 	    //cell0.coords.x = x;
 	    //cell0.coords.y = y;
@@ -744,7 +754,10 @@ class Cell
 	    bool opposing_exists = n0!= null && n0.processed;
 	    bool opposing_subdivided = opposing_exists && n0.is_subdivided;
 		    //n0.child[0];
-	    bool want_to_subdivide = (this.depth<2 ||  distance < edge_len) && edge_len > 4.0f;
+        float factor = 8.0f;
+        if (!TopIsVisible)
+            factor *= 4.0f;
+	    bool want_to_subdivide = (this.depth<2 ||  distance*factor < edge_len) && edge_len > 16.0f;
 	    bool force_subdivide = opposing_subdivided || force_subdivision;
 	    if (want_to_subdivide || force_subdivide)
 	    {
@@ -906,8 +919,8 @@ class Cell
 			    //Cell	cell = cells[sector_index];
 
 			    is_subdivided = true;
-			    result |= child[0].Process(f);
-			    result |= child[1].Process(f);
+			    result |= child[0].Process(f,TopIsVisible,BottomIsVisible,WaterIsVisible);
+                result |= child[1].Process(f, TopIsVisible, BottomIsVisible, WaterIsVisible);
 			    //result |= opposing_exists && !opposing_subdivided;	//opposing must follow
 		    }
 	    }
@@ -994,7 +1007,7 @@ class Cell
 		    for (int row = 0; row <= VisualResolution; row++)
 			    for (int column = 0; column <= row; column++)
 			    {
-				    vertices.Add(float3((float)(column) / (float)(VisualResolution),1.0f-(float)(row)/(float)(VisualResolution),((vertices.Count%2) *2 -1)*10));
+				    vertices.Add(float3((float)(column) / (float)(VisualResolution),1.0f-(float)(row)/(float)(VisualResolution),((vertices.Count%2) *2 -1)*2));
                     normals.Add(float3(0, 0, 1));
                     tangents.Add(float4(1, 0, 0, 1));
 			    }
@@ -1114,7 +1127,7 @@ class HeightMap
 
     private static float DecodeHeight(Color32 c)
     {
-        return ((float)c.r) / 255.0f + (float)c.g + (float)c.b * 255.0f - 1000.0f;
+        return ((float)c.r) / 256.0f + (float)c.g + (float)c.b * 256.0f - 1000.0f;
     }
 
     public HeightMap(string source)
@@ -1161,9 +1174,19 @@ public class SurfaceRenderer : MonoBehaviour {
 
     public Rect    lastExtend = new Rect();
     private Vector2 center;
-    public Material TopMaterial,
-                    BottomMaterial,
-                    WaterMaterial;
+    private Material topMaterial,
+                    bottomMaterial,
+                    waterMaterial;
+    private Shader topShader,
+                        bottomShader,
+                        waterShader;
+    private Texture2D   grass,
+                        forest,
+                        rock,
+                        sand;
+    public Texture2D Grass, Rock, Sand, Forest;
+                    
+    
     public bool     Initialized = false;
     
     public int DbgFrame = 0;
@@ -1195,13 +1218,11 @@ public class SurfaceRenderer : MonoBehaviour {
 
     public float SampleHeightAt(float x, float y)
     {
-        return 0;
-        //return h0.Sample(last_extend.x.Relativate(x), last_extend.y.Relativate(y));
+        return h0.Sample(lastExtend.x.Relativate(x), lastExtend.y.Relativate(y));
     }
     public float SampleLowerHeightAt(float x, float y)
     {
-        return 0;
-        //return h1.Sample(last_extend.x.Relativate(x), last_extend.y.Relativate(y));
+        return h1.Sample(lastExtend.x.Relativate(x), lastExtend.y.Relativate(y));
     }
     public float SampleWaterHeightAt(float x, float y)
     {
@@ -1227,7 +1248,7 @@ public class SurfaceRenderer : MonoBehaviour {
         m.SetVector("cameraPosition", f.UnityCenter);
         m.SetVector("Region", new Vector4(lastExtend.x.Min, lastExtend.y.Min, lastExtend.x.Max, lastExtend.y.Max));
     }
-    void UpdateMaterial(Material m, HeightMap h0, HeightMap h1, HeightMap h2, Texture2D normalMap)
+    void UpdateMaterial(Material m, Texture2D normalMap)
     {
         if (m == null)
             return;
@@ -1252,7 +1273,11 @@ public class SurfaceRenderer : MonoBehaviour {
     void OnRenderObject()
     {
         this.transform.position = new Vector3(0, Mathf.Sin(Time.time) * 0.5f, 0);
-        viewCamera = Camera.current;
+
+        if (viewCamera == null && Camera.current.name == "SceneCamera")
+        {
+            viewCamera = Camera.current;
+        }
     }
 
     void ResetCells()
@@ -1281,6 +1306,42 @@ public class SurfaceRenderer : MonoBehaviour {
         //h2 = new HeightMap("islandWater.png");
         UpdateExtend(0, 0, h0.Texture.width, h0.Texture.height);
 
+        topShader = (Shader)Resources.Load("IslandTop", typeof(Shader));
+        bottomShader = (Shader)Resources.Load("IslandBottom", typeof(Shader));
+
+        topMaterial = new Material(topShader);
+        bottomMaterial = new Material(bottomShader);
+        //waterMaterial = new Material(waterShader);
+
+        UpdateMaterial(topMaterial, topNormalMap);
+        UpdateMaterial(bottomMaterial, bottomNormalMap);
+
+        {
+            rock = Rock;
+            if (Rock != null)
+            {
+                topMaterial.SetTexture("RockColor", Rock);
+                bottomMaterial.SetTexture("RockColor", Rock);
+            }
+        }
+        {
+            grass = Grass;
+            if (Grass != null)
+                topMaterial.SetTexture("GrassColor", Grass);
+        }
+        {
+            sand = Sand;
+            if (Sand != null)
+                topMaterial.SetTexture("SandColor", Sand);
+        }
+        {
+            forest = Forest;
+            if (Forest != null)
+                topMaterial.SetTexture("ForestColor", Forest);
+        }
+
+
+
         ResetCells();
         DbgFrame = 0;
     }
@@ -1295,7 +1356,29 @@ public class SurfaceRenderer : MonoBehaviour {
             Start();
 
         //DbgCamera = Camera.current.name;
-        
+
+        if (rock != Rock)
+        {
+            rock = Rock;
+            topMaterial.SetTexture("RockColor", Rock);
+            bottomMaterial.SetTexture("RockColor", Rock);
+        }
+        if (grass != Grass)
+        {
+            grass = Grass;
+            topMaterial.SetTexture("GrassColor", Grass);
+        }
+        if (sand != Sand)
+        {
+            sand = Sand;
+            topMaterial.SetTexture("SandColor", Sand);
+        }
+        if (forest != Forest)
+        {
+            forest = Forest;
+            topMaterial.SetTexture("ForestColor", Forest);
+        }
+
         root.a.ResetPerFrameData();
         root.b.ResetPerFrameData();
         visibleLeaves.Clear();
@@ -1308,8 +1391,8 @@ public class SurfaceRenderer : MonoBehaviour {
                 {
                     //OutputDebugStringA("===== Next Iteration =====\n");
                     bool cont = false;
-                    cont |= root.a.Process(f);
-                    cont |= root.b.Process(f);
+                    cont |= root.a.Process(f,true,true,true);
+                    cont |= root.b.Process(f, true, true, true);
                     if (!cont)
                         break;
                 }
@@ -1326,8 +1409,8 @@ public class SurfaceRenderer : MonoBehaviour {
                 {
                     //OutputDebugStringA("===== Next Iteration =====\n");
                     bool cont = false;
-                    cont |= root.a.Process(f);
-                    cont |= root.b.Process(f);
+                    cont |= root.a.Process(f, true, true, true);
+                    cont |= root.b.Process(f, true, true, true);
                     if (!cont)
                         break;
                 }
@@ -1342,30 +1425,27 @@ public class SurfaceRenderer : MonoBehaviour {
         root.a.RegisterVisibleLeaves(visibleLeaves);
         root.b.RegisterVisibleLeaves(visibleLeaves);
 
-        UpdateMaterial(TopMaterial,h0,h1,h2,topNormalMap);
-        UpdateMaterial(BottomMaterial,h0,h1,h2,bottomNormalMap);
-//        UpdateMaterial(WaterMaterial,h0,h1,h2);
 
-        if (TopMaterial != null)
+        if (topMaterial != null)
         {
             //TopMaterial.SetPass(0);
             foreach (var leaf in visibleLeaves)
-                if (leaf.TopIsVisible)
-                    leaf.Render(TopMaterial,0);
+              //  if (leaf.TopIsVisible)
+                    leaf.Render(topMaterial,0);
         }
-        if (BottomMaterial != null)
+        if (bottomMaterial != null)
         {
             //BottomMaterial.SetPass(0);
             foreach (var leaf in visibleLeaves)
-                if (leaf.BottomIsVisible)
-                    leaf.Render(BottomMaterial,1);
+               // if (leaf.BottomIsVisible)
+                    leaf.Render(bottomMaterial,1);
         }
-        if (WaterMaterial != null)
+        if (waterMaterial != null)
         {
             //WaterMaterial.SetPass(0);
             foreach (var leaf in visibleLeaves)
-                if (leaf.WaterIsVisible)
-                    leaf.Render(WaterMaterial,2);
+               // if (leaf.WaterIsVisible)
+                    leaf.Render(waterMaterial,2);
         }
         DbgFrame++;
 	
