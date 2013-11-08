@@ -43,11 +43,31 @@ public class cameraMotion : MonoBehaviour {
     float angleX = 0.0f,
             angleY = 0.0f;
 	// Use this for initialization
+
+    TimeSpan lastFrame;// = watch.Elapsed;
+
 	void Start () {
+        watch.Start();
+        lastFrame = watch.Elapsed;
         blackStyle.normal.textColor = Color.black;
         whiteStyle.normal.textColor = Color.white;
     }
 
+
+//    int renderRevents = 
+
+    void OnPostRender()
+    {
+        TimeSpan now = watch.Elapsed;
+        TimeSpan delta = now - lastFrame;
+        lastFrame = now;
+        float d = (float)delta.TotalSeconds;
+        //UnityEngine.Debug.Log(now+" "+delta);
+        deltas.Enqueue(new Delta(d));
+        while (deltas.Peek().Expired)
+            deltas.Dequeue();
+
+    }
 
     void OnGUI()
     {
@@ -67,15 +87,14 @@ public class cameraMotion : MonoBehaviour {
 
 
         {
-            deltas.Enqueue(new Delta(Time.deltaTime));
-            while (deltas.Peek().Expired)
-                deltas.Dequeue();
             float sum = 0.0f;
             foreach (var d in deltas)
                 sum += d.Value;
 
             if (deltas.Count > 0)
                 fps = Mathf.RoundToInt(1.0f / (sum / deltas.Count));
+
+            //fps = Time.captureFramerate;
         }
 
         float angleSpeed = 1.0f;
