@@ -128,7 +128,7 @@
 						
 				result.xyz /= result.w;
 					
-				result.xy *= 3.0;
+				result.xy *= 5.0;
 				
 				//result = float4(0.0,0.0,1.0,1.0);
 				float3 normal = normalize(IN.tx * result.x + IN.ty * result.y + IN.tz * result.z);
