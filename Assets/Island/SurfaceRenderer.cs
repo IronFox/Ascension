@@ -1110,9 +1110,9 @@ class HeightMap
     public bool Bad { get { return tex == null; } }
 
 
-    public static Texture2D Load(string source)
+    public static Texture2D HelpLoadTextureFromResource(string source)
     {
-        object obj = Resources.Load(source, typeof(TextAsset));
+        UnityEngine.Object obj = Resources.Load(source, typeof(TextAsset));
         if (obj == null)
             return null;
         byte[] bytes = ((TextAsset)obj).bytes;
@@ -1120,6 +1120,7 @@ class HeightMap
             return null;
         Texture2D tex = new Texture2D(1, 1, TextureFormat.RGB24, false, true);
         tex.LoadImage(bytes);
+        Resources.UnloadAsset(obj);
         return tex;
     }
 
@@ -1128,12 +1129,12 @@ class HeightMap
         return ((float)c.r) / 256.0f + (float)c.g + (float)c.b * 256.0f - 1000.0f;
     }
 
-
+    
 
 
     public HeightMap(string source)
     {
-        tex = Load(source);
+        tex = HelpLoadTextureFromResource(source);
         if (tex == null)
             return;
         tex.filterMode = FilterMode.Point;
@@ -1143,6 +1144,15 @@ class HeightMap
         for (int x = 0; x < tex.width; x++)
             for (int y = 0; y < tex.height; y++)
                 field[x, y] = DecodeHeight(pixels[y * tex.width + x]);
+    }
+
+    public void Destroy()
+    {
+        if (tex != null)
+        {
+            UnityEngine.Object.DestroyImmediate(tex);
+            tex = null;
+        }
     }
 
 
@@ -1332,6 +1342,34 @@ public class SurfaceRenderer : MonoBehaviour {
         }
     }
 
+
+    private static void Replace(ref HeightMap h, HeightMap newMap)
+    {
+        if (h != null)
+            h.Destroy();
+        h = newMap;
+    }
+    private static void ReplaceObj<T>(ref T o, T newObject, Action<T> destroy)
+    {
+        if (o != null)
+            destroy(o);
+        o = newObject;
+    }
+    public static void Replace(ref Texture2D t, Texture2D newT) //don't call this on referenced textures
+    {
+        ReplaceObj(ref t, newT, (d) => { DestroyImmediate(d); });   //textures are (somewhere down there) created and filled with data
+    }
+    public static void Replace(ref Material t, Material newT)
+    {
+        ReplaceObj(ref t, newT, (d) => { DestroyImmediate(d); });   //materials are created
+    }
+    public static void Replace(ref Shader t, Shader newT)
+    {
+        ReplaceObj(ref t, newT, (d) => { Resources.UnloadAsset(d); });  //shaders are loaded, not created
+    }
+
+
+
     private bool Init(bool nameChange)
     {
         DbgInit = "";
@@ -1346,18 +1384,18 @@ public class SurfaceRenderer : MonoBehaviour {
 
         if (h0 == null || nameChange)
         {
-            h0 = new HeightMap("Islands/" + IslandName + "/top.png");
-            if (h0.Bad)
+            HeightMap newH0 = new HeightMap("Islands/" + IslandName + "/top.png");
+            if (newH0.Bad)
             {
-                h0 = null;
                 Initialized = false;
                 return false;
             }
-            h1 = new HeightMap("Islands/" + IslandName + "/bottom.png");
-            h2 = new HeightMap("Islands/" + IslandName + "/water.png");
-            topNormalMap = HeightMap.Load("Islands/" + IslandName + "/topNormals.png");
-            bottomNormalMap = HeightMap.Load("Islands/" + IslandName + "/bottomNormals.png");
-            waterCoverageMap = HeightMap.Load("Islands/" + IslandName + "/waterCoverage.png");
+            Replace(ref h0,newH0);
+            Replace(ref h1,new HeightMap("Islands/" + IslandName + "/bottom.png"));
+            Replace(ref h2, new HeightMap("Islands/" + IslandName + "/water.png"));
+            Replace(ref topNormalMap,HeightMap.HelpLoadTextureFromResource("Islands/" + IslandName + "/topNormals.png"));
+            Replace(ref bottomNormalMap, HeightMap.HelpLoadTextureFromResource("Islands/" + IslandName + "/bottomNormals.png"));
+            Replace(ref waterCoverageMap, HeightMap.HelpLoadTextureFromResource("Islands/" + IslandName + "/waterCoverage.png"));
             UpdateExtend(0, 0, h0.Texture.width, h0.Texture.height);
 
             RefreshHull();
@@ -1365,16 +1403,15 @@ public class SurfaceRenderer : MonoBehaviour {
         }
 
 
-        
-        topShader = (Shader)Resources.Load("Islands/top", typeof(Shader));
-        bottomShader = (Shader)Resources.Load("Islands/bottom", typeof(Shader));
-        waterShader = (Shader)Resources.Load("Islands/water", typeof(Shader));
-        
+
+        Replace(ref topShader, (Shader)Resources.Load("Islands/top", typeof(Shader)));
+        Replace(ref bottomShader, (Shader)Resources.Load("Islands/bottom", typeof(Shader)));
+        Replace(ref waterShader, (Shader)Resources.Load("Islands/water", typeof(Shader)));
 
 
-        topMaterial = new Material(topShader);
-        bottomMaterial = new Material(bottomShader);
-        waterMaterial = new Material(waterShader);
+        Replace(ref topMaterial, new Material(topShader));
+        Replace(ref bottomMaterial, new Material(bottomShader));
+        Replace(ref waterMaterial, new Material(waterShader));
 
         waterMaterial.SetTexture("WaterCoverageMap", waterCoverageMap);
         topMaterial.SetTexture("WaterCoverageMap", waterCoverageMap);
