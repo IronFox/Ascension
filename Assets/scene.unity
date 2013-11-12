@@ -74,46 +74,6 @@ NavMeshSettings:
     widthInaccuracy: 16.666666
     heightInaccuracy: 10
   m_NavMesh: {fileID: 0}
---- !u!1 &409956350
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 4
-  m_Component:
-  - 4: {fileID: 409956351}
-  - 64: {fileID: 409956352}
-  m_Layer: 0
-  m_Name: Physical Hull 0
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &409956351
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 409956350}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 1955122901}
---- !u!64 &409956352
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 409956350}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_SmoothSphereCollisions: 0
-  m_Convex: 0
-  m_Mesh: {fileID: 4300000, guid: cf080dc47e0295f42ae80a7a197980c9, type: 3}
 --- !u!1 &791875260
 GameObject:
   m_ObjectHideFlags: 0
@@ -242,6 +202,46 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
+--- !u!1 &987091914
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 987091916}
+  - 64: {fileID: 987091915}
+  m_Layer: 0
+  m_Name: Physical Hull 1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!64 &987091915
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 987091914}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_SmoothSphereCollisions: 0
+  m_Convex: 0
+  m_Mesh: {fileID: 4300002, guid: a81588ecef35b9f40857d18db1ee9771, type: 3}
+--- !u!4 &987091916
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 987091914}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1094677746}
 --- !u!1 &1028403370
 GameObject:
   m_ObjectHideFlags: 0
@@ -308,46 +308,96 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
---- !u!1 &1134166689
+--- !u!1 &1094677745
 GameObject:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   serializedVersion: 4
   m_Component:
-  - 4: {fileID: 1134166690}
-  - 64: {fileID: 1134166691}
+  - 4: {fileID: 1094677746}
+  - 114: {fileID: 1094677747}
   m_Layer: 0
-  m_Name: Physical Hull 1
+  m_Name: Island
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1134166690
+--- !u!4 &1094677746
 Transform:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1134166689}
+  m_GameObject: {fileID: 1094677745}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 1232691731}
+  - {fileID: 987091916}
+  m_Father: {fileID: 0}
+--- !u!114 &1094677747
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1094677745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2378fa918ed1d2d428097e2d2ef47705, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Grass: {fileID: 2800000, guid: 06b53d1c65275a54f822c6a04fcda547, type: 3}
+  Rock: {fileID: 2800000, guid: c2816014e835c9d489631554b8428e2e, type: 3}
+  Sand: {fileID: 2800000, guid: adb80349c16404349a723720bfcfc686, type: 3}
+  Moss: {fileID: 2800000, guid: 24effb0763196e14992e15babca073bc, type: 3}
+  Forest: {fileID: 2800000, guid: db17cb7e33e2f974ab1be8186160e7aa, type: 3}
+  WaveNormalMap: {fileID: 2800000, guid: 18ec54f56d6a0614ba63989cab194efd, type: 3}
+  SkyMap: {fileID: 8900000, guid: d2114468537fb9145830fb7323b7a240, type: 2}
+  Initialized: 1
+  IslandName: Elysium
+  DbgInit: 
+--- !u!1 &1232691730
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 1232691731}
+  - 64: {fileID: 1232691732}
+  m_Layer: 0
+  m_Name: Physical Hull 0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1232691731
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1232691730}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
-  m_Father: {fileID: 1955122901}
---- !u!64 &1134166691
+  m_Father: {fileID: 1094677746}
+--- !u!64 &1232691732
 MeshCollider:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1134166689}
+  m_GameObject: {fileID: 1232691730}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
   m_SmoothSphereCollisions: 0
   m_Convex: 0
-  m_Mesh: {fileID: 4300002, guid: cf080dc47e0295f42ae80a7a197980c9, type: 3}
+  m_Mesh: {fileID: 4300000, guid: a81588ecef35b9f40857d18db1ee9771, type: 3}
 --- !u!1 &1450347176
 GameObject:
   m_ObjectHideFlags: 0
@@ -522,57 +572,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_EditorClassIdentifier: 
-  Target: {fileID: 1955122901}
+  m_EditorClassIdentifier: 
+  Target: {fileID: 0}
   Offset: {x: 0, y: 0, z: 0}
   Radius: 500
---- !u!1 &1955122900
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 4
-  m_Component:
-  - 4: {fileID: 1955122901}
-  - 114: {fileID: 1955122902}
-  m_Layer: 0
-  m_Name: Island
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1955122901
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1955122900}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children:
-  - {fileID: 409956351}
-  - {fileID: 1134166690}
-  m_Father: {fileID: 0}
---- !u!114 &1955122902
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1955122900}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd2e21f71bfde9a428d880472b475d0e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_EditorClassIdentifier: 
-  Grass: {fileID: 2800000, guid: 7246f66a09f6d774a8d9285d31d86c6a, type: 3}
-  Rock: {fileID: 2800000, guid: 281437193e8b27c4da828a0c7f60b3c8, type: 3}
-  Sand: {fileID: 2800000, guid: f2f2971dd9339f0428deab86e7078e64, type: 3}
-  Moss: {fileID: 2800000, guid: 1bbf9b5a2fed5da42a122056dca9a0e0, type: 3}
-  Forest: {fileID: 2800000, guid: 3f0951298bf689648b0930500902d6e5, type: 3}
-  WaveNormalMap: {fileID: 2800000, guid: b13e9d8697f8b774095002d0f565e8cd, type: 3}
-  SkyMap: {fileID: 8900000, guid: 61b15f86ef411504eb4acfdc74b78e31, type: 2}
-  Initialized: 1
-  IslandName: 456c797369756d
-  DbgInit: 3b44657374726f79696e6720506879736963616c2048756c6c20303b44657374726f79696e6720506879736963616c2048756c6c20313b64656661756c745f4d65736850617274303b64656661756c745f4d6573685061727431

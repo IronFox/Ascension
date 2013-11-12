@@ -1374,7 +1374,7 @@ public class SurfaceRenderer : MonoBehaviour {
     {
         DbgInit = "";
         playMode = false;
-        if (IslandName.Length == 0)
+        if (IslandName == null || IslandName.Length == 0)
         {
             Initialized = false;
             return false;
